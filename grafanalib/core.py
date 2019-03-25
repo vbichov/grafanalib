@@ -10,6 +10,7 @@ from attr.validators import instance_of, in_
 import itertools
 import math
 from numbers import Number
+import string
 import warnings
 
 
@@ -75,6 +76,7 @@ SINGLESTAT_TYPE = 'singlestat'
 TABLE_TYPE = 'table'
 TEXT_TYPE = 'text'
 ALERTLIST_TYPE = "alertlist"
+AJAX_TYPE = 'ryantxu-ajax-panel'
 
 DEFAULT_FILL = 1
 DEFAULT_REFRESH = '10s'
@@ -94,19 +96,66 @@ UTC = 'utc'
 SCHEMA_VERSION = 12
 
 # Y Axis formats
-DURATION_FORMAT = "dtdurations"
+# more here: https://github.com/grafana/grafana/blob/master/packages/grafana-ui/src/utils/valueFormats/categories.ts
+
+# MISC
 NO_FORMAT = "none"
-OPS_FORMAT = "ops"
-PERCENT_UNIT_FORMAT = "percentunit"
-DAYS_FORMAT = "d"
-HOURS_FORMAT = "h"
-MINUTES_FORMAT = "m"
-SECONDS_FORMAT = "s"
-MILLISECONDS_FORMAT = "ms"
 SHORT_FORMAT = "short"
+PERCENT_FORMAT = "percent" # 1%, 80%, etc
+PERCENT_UNIT_FORMAT = "percentunit" # 0.01, 0.8
+
+# Date
+DATE_TIME_ISO_FORMAT = "dateTimeAsIso" # YYYY-MM-DD HH:mm:ss
+DATE_TIME_US_FORMAT = "dateTimeAsUS" # DD/MM/YYYY h:mm:ss a
+DATE_TIME_NOW = "dateTimeFromNow"
+
+# Time
+HERTZ_FORMAT = "hertz"
+NANOSECONDS_FORMAT = "ns"
+MICROSECONDS_FORMAT = "µs" # on a Mac: opt + m
+MILLISECONDS_FORMAT = "ms"
+SECONDS_FORMAT = "s"
+MINUTES_FORMAT = "m"
+HOURS_FORMAT = "h"
+DAYS_FORMAT = "d"
+DURATION_MS_FORMAT = "dtdurationms" # duration in milliseconds
+DURATION_FORMAT = "dtdurations" # duration in seconds
+TIMETICKS_FORMAT = "timeticks"
+CLOCK_MS_FORMAT = "clockms"
+CLOCK_S_FORMAT = "clocks"
+
+# Throughput
+OPS_FORMAT = "ops" # ops per second
+REQ_PER_SEC_FORMAT = "reqps"
+READS_PER_SEC_FORMAT = "rps"
+WRITES_PER_SEC_FORMAT = "wps"
+IOPS_FORMAT = "iops"
+OPM_FORMAT = "opm"
+READS_PER_MIN = "rpm"
+WRITES_PER_MIN = "wpm"
+
+
+# Data
+BITS_FORMAT = "bits"
 BYTES_FORMAT = "bytes"
+KIBIBYTES_FORMAT = "kbytes" # 2^10
+MEBIBYTES_FORMAT = "mbytes" # 2^20
+GIBIBYTES_FORMAT = "gbytes" # 2^30
+
+KILOBYTES_FORMAT = "deckbytes" # 10^3
+MEGABYTES_FORMAT = "decmbytes" # 10^6
+GIGABYTES_FORMAT = "decgbytes" # 10^9
+
+# Data rate
+PACKETS_PER_SEC_FORMAT = "pps"
 BITS_PER_SEC_FORMAT = "bps"
 BYTES_PER_SEC_FORMAT = "Bps"
+KILOBYTES_PER_SEC_FORMAT = "KBs"
+KILOBITS_PER_SEC_FORMAT = "Kbits"
+MEGABYTES_PER_SEC_FORMAT = "MBs"
+MEGABITES_PER_SEC_FORMAT = "Mbits"
+GIGABYTES_PER_SEC_FORMAT = "GBs"
+GIGABITS_PER_SEC_FORMAT = "Gbits"
 
 # Alert rule state
 STATE_NO_DATA = "no_data"
@@ -300,6 +349,7 @@ class Target(object):
     target = attr.ib(default="")
     instant = attr.ib(validator=instance_of(bool), default=False)
     datasource = attr.ib(default="")
+    hide = attr.ib(default=False)
 
     def to_json_data(self):
         return {
@@ -314,6 +364,42 @@ class Target(object):
             'step': self.step,
             'instant': self.instant,
             'datasource': self.datasource,
+            'hide': self.hide,
+        }
+
+
+@attr.s
+class CloudWatchTarget(object):
+    region = attr.ib(default="")
+    namespace = attr.ib(default="")
+    metricName = attr.ib(default="")
+    statistics = attr.ib(default=attr.Factory(list))
+    dimensions = attr.ib(default=attr.Factory(dict))
+    id = attr.ib(default="")
+    expression = attr.ib(default="")
+    period = attr.ib(default="")
+    alias = attr.ib(default="")
+    highResolution = attr.ib(default=False, validator=instance_of(bool))
+
+    refId = attr.ib(default="")
+    datasource = attr.ib(default="")
+    hide = attr.ib(default=False, validator=instance_of(bool))
+
+    def to_json_data(self):
+        return {
+            'region': self.region,
+            'namespace': self.namespace,
+            'metricName': self.metricName,
+            'statistics': self.statistics,
+            'dimensions': self.dimensions,
+            'id': self.id,
+            'expression': self.expression,
+            'period': self.period,
+            'alias': self.alias,
+            'highResolution': self.highResolution,
+            'refId': self.refId,
+            'datasource': self.datasource,
+            'hide': self.hide,
         }
 
 
@@ -464,7 +550,7 @@ class Row(object):
         validator=instance_of(Pixels),
     )
     showTitle = attr.ib(default=None)
-    title = attr.ib(default=None)
+    title = attr.ib(default="")
     repeat = attr.ib(default=None)
 
     def _iter_panels(self):
@@ -613,6 +699,7 @@ class Template(object):
 
     name = attr.ib()
     query = attr.ib()
+    _current = attr.ib(init=False, default=attr.Factory(dict))
     default = attr.ib(default=None)
     dataSource = attr.ib(default=None)
     label = attr.ib(default=None)
@@ -625,6 +712,7 @@ class Template(object):
         default=False,
         validator=instance_of(bool),
     )
+    options = attr.ib(default=attr.Factory(list))
     regex = attr.ib(default=None)
     useTags = attr.ib(
         default=False,
@@ -637,21 +725,42 @@ class Template(object):
     type = attr.ib(default='query')
     hide = attr.ib(default=SHOW)
 
-    def to_json_data(self):
-        return {
-            'allValue': self.allValue,
-            'current': {
+    def __attrs_post_init__(self):
+        if self.type == 'custom':
+            if len(self.options) == 0:
+                for value in self.query.split(','):
+                    is_default = value == self.default
+                    option = {
+                        "selected": is_default,
+                        "text": value,
+                        "value": value,
+                    }
+                    if is_default:
+                        self._current = option
+                    self.options.append(option)
+            else:
+                for option in self.options:
+                    if option['selected']:
+                        self._current = option
+                        break
+        else:
+            self._current = {
                 'text': self.default,
                 'value': self.default,
                 'tags': [],
-            },
+            }
+
+    def to_json_data(self):
+        return {
+            'allValue': self.allValue,
+            'current': self._current,
             'datasource': self.dataSource,
             'hide': self.hide,
             'includeAll': self.includeAll,
             'label': self.label,
             'multi': self.multi,
             'name': self.name,
-            'options': [],
+            'options': self.options,
             'query': self.query,
             'refresh': self.refresh,
             'regex': self.regex,
@@ -1039,6 +1148,29 @@ class Graph(object):
             graphObject['alert'] = self.alert
         return graphObject
 
+    def _iter_targets(self):
+        for target in self.targets:
+            yield target
+
+    def _map_targets(self, f):
+        return attr.assoc(self, targets=[f(t) for t in self.targets])
+
+    def auto_ref_ids(self):
+        """Give unique IDs all the panels without IDs.
+
+        Returns a new ``Graph`` that is the same as this one, except all
+        of the metrics have their ``refId`` property set. Any panels which had an
+        ``refId`` property set will keep that property, all others will have
+        auto-generated IDs provided for them.
+        """
+        ref_ids = set([target.refId for target in self._iter_targets() if target.refId])
+        candidate_ref_ids = itertools.chain(string.ascii_uppercase, itertools.product(string.ascii_uppercase, repeat=2))
+        auto_ref_ids = (i for i in candidate_ref_ids if i not in ref_ids)
+
+        def set_refid(target):
+            return target if target.refId else attr.assoc(target, refId=next(auto_ref_ids))
+        return self._map_targets(set_refid)
+
 
 @attr.s
 class SparkLine(object):
@@ -1139,6 +1271,55 @@ class Text(object):
             'type': TEXT_TYPE,
         }
 
+@attr.s
+class AjaxPanel(object):
+    """Generates the Ajax Plugin Panel."""
+    method = attr.ib()
+    params_js = attr.ib()
+    title = attr.ib()
+    url = attr.ib()
+    datasource = attr.ib(default=None)
+    header_js = attr.ib(default="{}")
+    id = attr.ib(default=None)
+    minSpan = attr.ib(default=None)
+    mode = attr.ib(default=TEXT_MODE_HTML)
+    responseType = attr.ib(default=TEXT_MODE_TEXT)
+    skipSameURL = attr.ib(default=True, validator=instance_of(bool))
+    showTime = attr.ib(default=False, validator=instance_of(bool))
+    showTimeFormat = attr.ib(default="LTS")
+    showTimePrefix = attr.ib(default=None)
+    showTimeValue = attr.ib(default="request")
+    span = attr.ib(default=None)
+    targets = attr.ib(default=[{}])
+    templateResponse = attr.ib(default=True, validator=instance_of(bool))
+    transparent = attr.ib(default=False, validator=instance_of(bool))
+    type = attr.ib(default=AJAX_TYPE)
+    withCredentials = attr.ib(default=False, validator=instance_of(bool))
+
+    def to_json_data(self):
+        return {
+           'method': self.method,
+           'params_js': self.params_js,
+           'title': self.title,
+           'url': self.url,
+           'datasource': self.datasource,
+           'header_js': self.header_js,
+           'id': self.id,
+           'minSpan': self.minSpan,
+           'mode': self.mode,
+           'responseType': self.responseType,
+           'skipSameURL': self.skipSameURL,
+           'showTime': self.showTime,
+           'showTimeFormat': self.showTimeFormat,
+           'showTimePrefix': self.showTimePrefix,
+           'showTimeValue': self.showTimeValue,
+           'span': self.span,
+           'targets': self.targets,
+           'templateResponse': self.templateResponse,
+           'transparent': self.transparent,
+           'type': self.type,
+           'withCredentials': self.withCredentials
+        }
 
 @attr.s
 class AlertList(object):
