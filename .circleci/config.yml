@@ -4,7 +4,7 @@ jobs:
   # using tox
   toxify:
       docker:
-        - image: quay.io/python-devs/ci-image
+        - image: quay.io/python-devs/ci-image:master
       steps:
         - checkout
         - run: ls -ltr
