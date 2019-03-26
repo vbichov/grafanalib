@@ -7,8 +7,7 @@ jobs:
         - image: quay.io/python-devs/ci-image
       steps:
         - checkout
-        - run: easy_install pip
-        - run: pip install tox && tox
+        - run: pip3 install tox && tox
 
 workflows:
   version: 2
