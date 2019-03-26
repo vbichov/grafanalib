@@ -562,7 +562,7 @@ class Row(object):
     def to_json_data(self):
         showTitle = False
         title = "New row"
-        if self.title is not None:
+        if self.title != "":
             showTitle = True
             title = self.title
         if self.showTitle is not None:
