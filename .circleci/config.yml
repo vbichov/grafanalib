@@ -14,4 +14,4 @@ workflows:
 
   myproj:
     jobs:
-          - hello/hello-build
+      - toxify
