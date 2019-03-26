@@ -7,6 +7,8 @@ jobs:
         - image: quay.io/python-devs/ci-image
       steps:
         - checkout
+        - run: ls -ltr
+        - run: pwd
         - run: pip3 install tox && tox
 
 workflows:
