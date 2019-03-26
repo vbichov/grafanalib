@@ -9,7 +9,8 @@ jobs:
         - checkout
         - run: ls -ltr
         - run: pwd
-        - run: pip3 install tox && tox
+        - run: pip3 install tox
+        - run: tox
 
 workflows:
   version: 2
