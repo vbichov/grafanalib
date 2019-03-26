@@ -2,8 +2,8 @@
 grafanalib
 ==========
 
-.. image:: https://circleci.com/gh/weaveworks/grafanalib.svg?style=shield
-    :target: https://circleci.com/gh/weaveworks/grafanalib
+.. image:: https://circleci.com/gh/vbichov/grafanalib.svg?style=shield
+    :target: https://circleci.com/gh/vbichov/grafanalib
 
 Do you like `Grafana <http://grafana.org/>`_ but wish you could version your
 dashboard configuration? Do you find yourself repeating common patterns? If
