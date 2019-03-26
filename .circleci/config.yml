@@ -12,6 +12,7 @@ jobs:
         - run: pip3 install tox
         - run: tox
         - store_test_results
+            path: .
 
 workflows:
   version: 2
