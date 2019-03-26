@@ -11,6 +11,7 @@ jobs:
         - run: pwd
         - run: pip3 install tox
         - run: tox
+        - store_test_results
 
 workflows:
   version: 2
