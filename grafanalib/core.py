@@ -367,6 +367,19 @@ class Target(object):
             'hide': self.hide,
         }
 
+@attr.s
+class SqlTarget(Target):
+    """
+    Metric in sql foramt
+    """
+    rawSql = attr.ib(default="")
+    def to_json_data(self):
+        super_json = super(SqlTarget, self).to_json_data()
+        super_json['rawSql'] = self.rawSql
+        super_json['rawQuery'] = True
+        return super_json
+
+
 
 @attr.s
 class CloudWatchTarget(object):
