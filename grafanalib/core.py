@@ -952,10 +952,10 @@ class Alert(object):
     name = attr.ib()
     message = attr.ib()
     alertConditions = attr.ib()
-    executionErrorState = attr.ib(default=STATE_ALERTING)
+    executionErrorState = attr.ib(default=STATE_KEEP_LAST_STATE)
     frequency = attr.ib(default="60s")
     handler = attr.ib(default=1)
-    noDataState = attr.ib(default=STATE_NO_DATA)
+    noDataState = attr.ib(default=STATE_KEEP_LAST_STATE)
     notifications = attr.ib(default=attr.Factory(list))
 
     def to_json_data(self):
