@@ -93,6 +93,10 @@ LIGHT_STYLE = 'light'
 
 UTC = 'utc'
 
+TIMEZONE_UTC = UTC
+TIMEZONE_BROWSER = 'browser'
+TIMEZONE_DEFAULT = ''
+
 SCHEMA_VERSION = 12
 
 # Y Axis formats
