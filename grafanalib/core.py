@@ -1354,6 +1354,7 @@ class AlertList(object):
     stateFilter = attr.ib(default=attr.Factory(list))
     title = attr.ib(default="")
     transparent = attr.ib(default=False, validator=instance_of(bool))
+    span = attr.ib(default=12, validator=instance_of(int))
 
     def to_json_data(self):
         return {
@@ -1367,7 +1368,8 @@ class AlertList(object):
             'stateFilter': self.stateFilter,
             'title': self.title,
             'transparent': self.transparent,
-            'type': ALERTLIST_TYPE,
+            'type': ALERTLIST_TYPE
+            'span': self.span
         }
 
 
