@@ -1368,7 +1368,7 @@ class AlertList(object):
             'stateFilter': self.stateFilter,
             'title': self.title,
             'transparent': self.transparent,
-            'type': ALERTLIST_TYPE
+            'type': ALERTLIST_TYPE,
             'span': self.span
         }
 
