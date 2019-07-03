@@ -1192,7 +1192,7 @@ class Graph(object):
         return attr.assoc(self, targets=[f(t) for t in self.targets])
 
     
-    def _resolve_graphite_targets(self):
+    def resolve_graphite_targets(self):
         refId_query = {}
         for target in self._iter_targets():
             if isinstance(target, GraphiteTarget):
