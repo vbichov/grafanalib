@@ -2,6 +2,14 @@
 Changelog
 =========
 
+0.5.7 (2019-07-01)
+==================
+* adding span attr to AlertList - without it dashboard generation fails
+* adding support for delayed alert fireing - see https://grafana.com/docs/alerting/rules/#for
+* added sql query support
+* graphite query - for query reference support
+
+
 0.5.6 (2019-02-21)
 ==================
 

@@ -12,6 +12,7 @@ import math
 from numbers import Number
 import string
 import warnings
+import re
 
 
 @attr.s
@@ -370,6 +371,22 @@ class Target(object):
             'datasource': self.datasource,
             'hide': self.hide,
         }
+
+
+@attr.s
+class GraphiteTarget(Target):
+    """
+    GraphiteSpecific target
+    Grafana can infer query refrences (I.E #A) - this extension does exactly that
+    """
+    targetFull = attr.ib(validator=instance_of(str), default="")
+
+    def to_json_data(self):
+        super_json = super(GraphiteTarget, self).to_json_data()
+        if self.targetFull != "":
+            super_json['targetFull'] = self.targetFull
+        return super_json
+
 
 @attr.s
 class SqlTarget(Target):
@@ -1173,6 +1190,26 @@ class Graph(object):
 
     def _map_targets(self, f):
         return attr.assoc(self, targets=[f(t) for t in self.targets])
+
+    
+    def _resolve_graphite_targets(self):
+        refId_query = {}
+        for target in self._iter_targets():
+            if isinstance(target, GraphiteTarget):
+                refId_query[target.refId] = target.target
+        #TODO - the whole n^2 is just for now - need to think of worst case or build DAG
+        for _ in range(len(refId_query.keys())**2):
+            for refId in refId_query:
+                templates =  re.findall("#[A-Z]", refId_query[refId])
+                if not templates:
+                    next
+                for template in templates:
+                    template_value = refId_query[template[1:]] # without the #
+                    refId_query[refId] = refId_query[refId].replace(template, template_value)
+        for target in self._iter_targets():
+            if isinstance(target, GraphiteTarget):
+                target.targetFull = refId_query[target.refId]
+
 
     def auto_ref_ids(self):
         """Give unique IDs all the panels without IDs.

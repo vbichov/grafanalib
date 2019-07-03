@@ -3,7 +3,7 @@
 import grafanalib.core as G
 from grafanalib import _gen
 
-import sys
+import sys, re
 if sys.version_info[0] < 3:
     from io import BytesIO as StringIO
 else:
@@ -116,3 +116,25 @@ def test_row_show_title():
     row = G.Row(title='My title', showTitle=False).to_json_data()
     assert row['title'] == 'My title'
     assert not row['showTitle']
+
+
+def test_graphite_target_full():
+    dashboard = G.Graph(
+        title="Graphite target full test",
+        dataSource="graphite datasource",
+        targets=[
+            G.GraphiteTarget(
+                refId="A",
+                target="foo.bar"
+            ),
+            G.GraphiteTarget(
+                refId="B",
+                target="sumSeries(#A,foo2.bar2)"
+            )
+        ]
+    )
+    dashboard.resolve_graphite_targets()
+    for target in dashboard.targets:
+        assert target.targetFull != ""
+        
+        assert not re.findall("#[A-Z]", target.targetFull)
