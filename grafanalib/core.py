@@ -1196,27 +1196,28 @@ class Graph(object):
             "yaxis": "left"
         }
         for alert_condition in self.alert.alertConditions:
-            if isinstance(alert_condition.evaluator, GreaterThan) or isinstance(alert_condition.evaluator, LowerThan):
+            evaluator = alert_condition.evaluator
+            if evaluator.type == EVAL_GT or evaluator.type == EVAL_LT:
                 threshold = copy.deepcopy(threshold_base)
-                threshold['value'] = alert_condition.evaluator.params[0]
-                threshold['op'] = alert_condition.evaluator.type
+                threshold['value'] = evaluator.params[0]
+                threshold['op'] = evaluator.type
                 res.append(threshold)
-            if isinstance(alert_condition.evaluator, WithinRange):
+            if evaluator.type == EVAL_WITHIN_RANGE:
                 threshold = copy.deepcopy(threshold_base)
-                threshold['value'] = alert_condition.evaluator.params[0]
+                threshold['value'] = evaluator.params[0]
                 threshold['op'] = EVAL_GT
                 res.append(threshold)
                 threshold = copy.deepcopy(threshold_base)
-                threshold['value'] = alert_condition.evaluator.params[1]
+                threshold['value'] = evaluator.params[1]
                 threshold['op'] = EVAL_LT
                 res.append(threshold)
-            if isinstance(alert_condition.evaluator, OutsideRange):
+            if evaluator.type == EVAL_OUTSIDE_RANGE:
                 threshold = copy.deepcopy(threshold_base)
-                threshold['value'] = alert_condition.evaluator.params[0]
+                threshold['value'] = evaluator.params[0]
                 threshold['op'] = EVAL_LT
                 res.append(threshold)
                 threshold = copy.deepcopy(threshold_base)
-                threshold['value'] = alert_condition.evaluator.params[1]
+                threshold['value'] = evaluator.params[1]
                 threshold['op'] = EVAL_GT
                 res.append(threshold)
         return res
