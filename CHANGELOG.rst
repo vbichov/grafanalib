@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.5.8 (2019-07-23)
+==================
+* bumping shema version (from 12 to 13)
+* adding thresholds for alerts
+
+
 0.5.7 (2019-07-01)
 ==================
 * adding span attr to AlertList - without it dashboard generation fails

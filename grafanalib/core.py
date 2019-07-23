@@ -99,7 +99,7 @@ TIMEZONE_UTC = UTC
 TIMEZONE_BROWSER = 'browser'
 TIMEZONE_DEFAULT = ''
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 
 # Y Axis formats
 # more here: https://github.com/grafana/grafana/blob/master/packages/grafana-ui/src/utils/valueFormats/categories.ts
