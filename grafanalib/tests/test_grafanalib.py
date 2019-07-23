@@ -3,7 +3,7 @@
 import grafanalib.core as G
 from grafanalib import _gen
 
-import sys, re
+import sys, re, json
 if sys.version_info[0] < 3:
     from io import BytesIO as StringIO
 else:
@@ -138,3 +138,33 @@ def test_graphite_target_full():
         assert target.targetFull != ""
         
         assert not re.findall("#[A-Z]", target.targetFull)
+
+def test_alert_thresholds():
+    some_target_for_alert = G.GraphiteTarget( refId="A",target="foo.bar")
+
+    graph = G.Graph(
+        title = "Graph with alert",
+        targets=[
+            some_target_for_alert
+        ],
+        alert = G.Alert(
+                name = "alert name",
+                message = "alert message",
+                alertConditions = [
+                    G.AlertCondition(
+                        some_target_for_alert,
+                        timeRange=G.TimeRange("5m", "now"),
+                        evaluator=G.GreaterThan(10),
+                        reducerType=G.RTYPE_MAX,
+                        operator=G.OP_AND
+                    )
+                ]
+        )
+    )
+
+    stream = StringIO()
+    _gen.write_dashboard(graph, stream)
+    graph_json = json.loads(stream.getvalue())
+    print(graph_json.keys())
+    #threre is a threshold
+    assert graph_json['thresholds'][0] != None

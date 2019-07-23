@@ -13,6 +13,7 @@ from numbers import Number
 import string
 import warnings
 import re
+import copy
 
 
 @attr.s
@@ -1182,7 +1183,44 @@ class Graph(object):
         }
         if self.alert:
             graphObject['alert'] = self.alert
+            graphObject['thresholds'] = self._get_thresholds()
         return graphObject
+
+
+    def _get_thresholds(self):
+        res = []
+        threshold_base = {
+            "fill": True,
+            "line": True,
+            "colorMode": "critical",
+            "yaxis": "left"
+        }
+        for alert_condition in self.alert.alertConditions:
+            if isinstance(alert_condition.evaluator, GreaterThan) or isinstance(alert_condition.evaluator, LowerThan):
+                threshold = copy.deepcopy(threshold_base)
+                threshold['value'] = alert_condition.evaluator.params[0]
+                threshold['op'] = alert_condition.evaluator.type
+                res.append(threshold)
+            if isinstance(alert_condition.evaluator, WithinRange):
+                threshold = copy.deepcopy(threshold_base)
+                threshold['value'] = alert_condition.evaluator.params[0]
+                threshold['op'] = EVAL_GT
+                res.append(threshold)
+                threshold = copy.deepcopy(threshold_base)
+                threshold['value'] = alert_condition.evaluator.params[1]
+                threshold['op'] = EVAL_LT
+                res.append(threshold)
+            if isinstance(alert_condition.evaluator, OutsideRange):
+                threshold = copy.deepcopy(threshold_base)
+                threshold['value'] = alert_condition.evaluator.params[0]
+                threshold['op'] = EVAL_LT
+                res.append(threshold)
+                threshold = copy.deepcopy(threshold_base)
+                threshold['value'] = alert_condition.evaluator.params[1]
+                threshold['op'] = EVAL_GT
+                res.append(threshold)
+        return res
+
 
     def _iter_targets(self):
         for target in self.targets:
