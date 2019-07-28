@@ -2,6 +2,11 @@
 Changelog
 =========
 
+
+0.5.9 (2019-11-02)
+=================
+* adding alert rule tag basic support
+
 0.5.8 (2019-07-23)
 ==================
 * bumping shema version (from 12 to 13)

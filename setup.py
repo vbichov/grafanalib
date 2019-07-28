@@ -15,7 +15,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.5.7',
+    version='0.5.8',
     description='Library for building Grafana dashboards',
     long_description=open(README).read(),
     url='https://github.com/weaveworks/grafanalib',
@@ -34,7 +34,11 @@ setup(
         'Topic :: System :: Monitoring',
     ],
     install_requires=[
-        'attrs',
+<<<<<<< HEAD
+        'attrs==19.1.0"',
+=======
+        'attrs==19.1.0',
+>>>>>>> adding alert rule tags support, locking attrs dependecy and bumping version
     ],
     extras_require={
         'dev': [

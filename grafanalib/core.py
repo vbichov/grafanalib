@@ -980,6 +980,7 @@ class Alert(object):
     noDataState = attr.ib(default=STATE_KEEP_LAST_STATE)
     notifications = attr.ib(default=attr.Factory(list))
     delayFor = attr.ib(default="60s")
+    alertRuleTags = attr.ib(default=attr.Factory(dict))
 
     def to_json_data(self):
         return {
@@ -991,7 +992,8 @@ class Alert(object):
             "name": self.name,
             "noDataState": self.noDataState,
             "notifications": self.notifications,
-            "for" : self.delayFor
+            "for" : self.delayFor,
+            "alertRuleTags" : self.alertRuleTags
         }
 
 
