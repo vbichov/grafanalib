@@ -39,7 +39,7 @@ def test_auto_id():
     """auto_panel_ids() provides IDs for all panels without IDs already set."""
     dashboard = G.Dashboard(
         title="Test dashboard",
-        rows=[
+        panels=[
             G.Row(panels=[
                 G.Graph(
                     title="CPU Usage by Namespace (rate[5m])",
@@ -64,14 +64,14 @@ def test_auto_id():
             ]),
         ],
     ).auto_panel_ids()
-    assert dashboard.rows[0].panels[0].id == 1
+    assert dashboard.panels[0].panels[0].id == 1
 
 
 def test_auto_refids():
     """auto_ref_ids() provides refIds for all targets without refIds already set."""
     dashboard = G.Dashboard(
         title="Test dashboard",
-        rows=[
+        panels=[
             G.Row(panels=[
                 G.Graph(
                     title="CPU Usage by Namespace (rate[5m])",
@@ -99,23 +99,23 @@ def test_auto_refids():
             ]),
         ],
     )
-    assert dashboard.rows[0].panels[0].targets[0].refId == 'A'
-    assert dashboard.rows[0].panels[0].targets[1].refId == 'Q'
-    assert dashboard.rows[0].panels[0].targets[2].refId == 'B'
+    assert dashboard.panels[0].panels[0].targets[0].refId == 'A'
+    assert dashboard.panels[0].panels[0].targets[1].refId == 'Q'
+    assert dashboard.panels[0].panels[0].targets[2].refId == 'B'
 
 
 def test_row_show_title():
     row = G.Row().to_json_data()
-    assert row['title'] == 'New row'
-    assert not row['showTitle']
+    assert row[0]['title'] == 'New row'
+    assert not row[0]['showTitle']
 
     row = G.Row(title='My title').to_json_data()
-    assert row['title'] == 'My title'
-    assert row['showTitle']
+    assert row[0]['title'] == 'My title'
+    assert row[0]['showTitle']
 
     row = G.Row(title='My title', showTitle=False).to_json_data()
-    assert row['title'] == 'My title'
-    assert not row['showTitle']
+    assert row[0]['title'] == 'My title'
+    assert not row[0]['showTitle']
 
 
 def test_graphite_target_full():

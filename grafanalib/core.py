@@ -99,7 +99,7 @@ TIMEZONE_UTC = UTC
 TIMEZONE_BROWSER = 'browser'
 TIMEZONE_DEFAULT = ''
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 20
 
 # Y Axis formats
 # more here: https://github.com/grafana/grafana/blob/master/packages/grafana-ui/src/utils/valueFormats/categories.ts
@@ -564,7 +564,7 @@ def _balance_panels(panels):
     auto_span = math.ceil(
         (TOTAL_SPAN - allotted_spans) / (len(no_span_set) or 1))
     return [
-        attr.assoc(panel, span=auto_span) if panel.span is None else panel
+        attr.evolve(panel, span=auto_span) if panel.span is None else panel
         for panel in panels
     ]
 
@@ -573,7 +573,8 @@ def _balance_panels(panels):
 class Row(object):
     # TODO: jml would like to separate the balancing behaviour from this
     # layer.
-    panels = attr.ib(default=attr.Factory(list), convert=_balance_panels)
+    id = attr.ib(default="")
+    panels = attr.ib(default=attr.Factory(list), converter=_balance_panels)
     collapse = attr.ib(
         default=False, validator=instance_of(bool),
     )
@@ -592,7 +593,7 @@ class Row(object):
         return iter(self.panels)
 
     def _map_panels(self, f):
-        return attr.assoc(self, panels=list(map(f, self.panels)))
+        return attr.evolve(self, panels=list(map(f, self.panels)))
 
     def to_json_data(self):
         showTitle = False
@@ -602,7 +603,7 @@ class Row(object):
             title = self.title
         if self.showTitle is not None:
             showTitle = self.showTitle
-        return {
+        return [{ 
             'collapse': self.collapse,
             'editable': self.editable,
             'height': self.height,
@@ -610,7 +611,8 @@ class Row(object):
             'showTitle': showTitle,
             'title': title,
             'repeat': self.repeat,
-        }
+        },
+        self.panels]
 
 
 @attr.s
@@ -998,8 +1000,8 @@ class Alert(object):
 @attr.s
 class Dashboard(object):
 
-    title = attr.ib()
-    rows = attr.ib()
+    title = attr.ib(validator=instance_of(str), default="New Dashboard")
+    panels = attr.ib(factory=list)
     annotations = attr.ib(
         default=attr.Factory(Annotations),
         validator=instance_of(Annotations),
@@ -1018,9 +1020,10 @@ class Dashboard(object):
     links = attr.ib(default=attr.Factory(list))
     refresh = attr.ib(default=DEFAULT_REFRESH)
     schemaVersion = attr.ib(default=SCHEMA_VERSION)
-    sharedCrosshair = attr.ib(
-        default=False,
-        validator=instance_of(bool),
+    # sharedCrosshair (old name change version 14)
+    graphTooltip = attr.ib(
+        default=1,
+        validator=instance_of(int),
     )
     style = attr.ib(default=DARK_STYLE)
     tags = attr.ib(default=attr.Factory(list))
@@ -1041,12 +1044,12 @@ class Dashboard(object):
     uid = attr.ib(default=None)
 
     def _iter_panels(self):
-        for row in self.rows:
-            for panel in row._iter_panels():
-                yield panel
+        for panel in self.panels:
+            yield panel
 
+    # need to understand if this function is still needed
     def _map_panels(self, f):
-        return attr.assoc(self, rows=[r._map_panels(f) for r in self.rows])
+        return attr.evolve(self, panels=[r._map_panels(f) for r in self.panels])
 
     def auto_panel_ids(self):
         """Give unique IDs all the panels without IDs.
@@ -1060,7 +1063,7 @@ class Dashboard(object):
         auto_ids = (i for i in itertools.count(1) if i not in ids)
 
         def set_id(panel):
-            return panel if panel.id else attr.assoc(panel, id=next(auto_ids))
+            return panel if panel.id else attr.evolve(panel, id=next(auto_ids))
         return self._map_panels(set_id)
 
     def to_json_data(self):
@@ -1073,9 +1076,9 @@ class Dashboard(object):
             'id': self.id,
             'links': self.links,
             'refresh': self.refresh,
-            'rows': self.rows,
+            'panels': self.panels,
             'schemaVersion': self.schemaVersion,
-            'sharedCrosshair': self.sharedCrosshair,
+            'graphTooltip': self.graphTooltip,
             'style': self.style,
             'tags': self.tags,
             'templating': self.templating,
@@ -1139,7 +1142,7 @@ class Graph(object):
     # XXX: This isn't a *good* default, rather it's the default Grafana uses.
     yAxes = attr.ib(
         default=attr.Factory(YAxes),
-        convert=to_y_axes,
+        converter=to_y_axes,
         validator=instance_of(YAxes),
     )
     alert = attr.ib(default=None)
@@ -1228,7 +1231,7 @@ class Graph(object):
             yield target
 
     def _map_targets(self, f):
-        return attr.assoc(self, targets=[f(t) for t in self.targets])
+        return attr.evolve(self, targets=[f(t) for t in self.targets])
 
     
     def resolve_graphite_targets(self):
@@ -1263,7 +1266,7 @@ class Graph(object):
         auto_ref_ids = (i for i in candidate_ref_ids if i not in ref_ids)
 
         def set_refid(target):
-            return target if target.refId else attr.assoc(target, refId=next(auto_ref_ids))
+            return target if target.refId else attr.evolve(target, refId=next(auto_ref_ids))
         return self._map_targets(set_refid)
 
 
