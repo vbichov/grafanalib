@@ -34,11 +34,7 @@ setup(
         'Topic :: System :: Monitoring',
     ],
     install_requires=[
-<<<<<<< HEAD
-        'attrs==19.1.0"',
-=======
         'attrs==19.1.0',
->>>>>>> adding alert rule tags support, locking attrs dependecy and bumping version
     ],
     extras_require={
         'dev': [
